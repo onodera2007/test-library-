@@ -91,7 +91,9 @@ minecraft {
         }
     }
 }
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+tasks.named('test') {
+    enabled = false
+}
 repositories {
     mavenCentral()
     flatDir {

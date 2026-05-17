@@ -6,6 +6,7 @@ import github.com.gengyoubo.LP.network.CENetwork;
 import github.com.gengyoubo.LP.network.packet.CycleGeneratorRedstoneModePacket;
 import github.com.gengyoubo.LP.procedures.CloseTextures;
 import github.com.gengyoubo.LP.world.Menu.BasicGeneratorBlockEntityMenu;
+import net.ltxprogrammer.changed.init.ChangedItems;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -14,15 +15,21 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 
 public class BasicGeneratorBlockEntityScreen extends AbstractContainerScreen<BasicGeneratorBlockEntityMenu> {
-
     private static final HashMap<String, Object> guistate = BasicGeneratorBlockEntityMenu.guistate;
     private final Player entity;
     private Button redstoneModeButton;
+    private static final ResourceLocation texture = ResourceLocation.parse("changede:textures/screens/basic_generator_block_entity.png");
+    private static final ResourceLocation TEXTURE_1 = ResourceLocation.parse("changede:textures/screens/778828.png");
+    private static final ResourceLocation TEXTURE_2 = ResourceLocation.parse("changede:textures/screens/778863.png");
+    private static final ResourceLocation DLG=ResourceLocation.parse("changede:testures/screens/dark_latex_goo.png");
+    private static final ResourceLocation WLG=ResourceLocation.parse("changede:testures/screens/white.png");
+
 
     public BasicGeneratorBlockEntityScreen(BasicGeneratorBlockEntityMenu container, Inventory inventory, Component text) {
         super(container, inventory, text);
@@ -30,32 +37,31 @@ public class BasicGeneratorBlockEntityScreen extends AbstractContainerScreen<Bas
         this.imageWidth = 230;
         this.imageHeight = 180;
     }
-
-    private static final ResourceLocation texture = ResourceLocation.parse("changede:textures/screens/basic_generator_block_entity.png");
-    private static final ResourceLocation TEXTURE_1 = ResourceLocation.parse("changede:textures/screens/778828.png");
-    private static final ResourceLocation TEXTURE_2 = ResourceLocation.parse("changede:textures/screens/778863.png");
-
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
         RenderSystem.setShaderColor(1, 1, 1, 1);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-
+        ResourceLocation currentTexture;
         guiGraphics.blit(texture, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight, this.imageWidth, this.imageHeight);
-
         if (CloseTextures.execute(entity)) {
             long time = System.currentTimeMillis() / 1000;
-            ResourceLocation currentTexture = (time % 2 == 0) ? TEXTURE_1 : TEXTURE_2;
-
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(this.leftPos+107, this.topPos+38, 0);
-            guiGraphics.pose().scale(0.125f, 0.125f, 1.0f);
-
-            guiGraphics.blit(currentTexture, 0, 0, 0, 0, 128, 128, 128, 128);
-
-            guiGraphics.pose().popPose();
+            currentTexture = (time % 2 == 0) ? TEXTURE_1 : TEXTURE_2;
+        }else{
+            var item =CloseTextures.getSlot0Item(entity).getItem();
+            if(item==ChangedItems.WHITE_LATEX_GOO.get()){
+                currentTexture =WLG;
+            }else{
+                currentTexture =DLG;
+            }
         }
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(this.leftPos+107, this.topPos+38, 0);
+        guiGraphics.pose().scale(0.125f, 0.125f, 1.0f);
 
+        guiGraphics.blit(currentTexture, 0, 0, 0, 0, 128, 128, 128, 128);
+
+        guiGraphics.pose().popPose();
         RenderSystem.disableBlend();
     }
 
