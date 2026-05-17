@@ -1,4 +1,4 @@
-## change extra
+## Changed Extra
 Changed Extra（以下称为CE）分为三大部分，汉化、通用和扩展。  
 汉化：使用了 Mixin 对 Changed 与 Changed Addon Plus 的部分 硬编码 内容做出 汉化 的同时，对某些物品汉化进行优化；  
 通用：对 Changed 与 Changed Addon Plus 进行扩展，也是本模组的核心；  
