@@ -16,15 +16,12 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Mod.EventBusSubscriber
 public class latexStartEvents {
     public static final List<TransfurVariant<?>> FORM_VARIANTS = new ArrayList<>();
     private static final String TAG_VARIANT = "latex_start_variant";
@@ -34,7 +31,6 @@ public class latexStartEvents {
         return !level.getGameRules().getBoolean(CERegister.LATEX_START);
     }
 
-    @SubscribeEvent
     public static void onPlayerJoin(EntityJoinLevelEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (player.level().isClientSide) return;
@@ -82,7 +78,6 @@ public class latexStartEvents {
         changede.LOGGER.debug("Assigned player variant: {}", variant.getFormId());
     }
 
-    @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
         if (!event.isWasDeath()) return;
 
@@ -105,23 +100,22 @@ public class latexStartEvents {
     }
 
     public static void setup(final FMLCommonSetupEvent event) {
-        changede.LOGGER.debug("start program!");
         event.enqueueWork(() -> {
             var registry = ChangedRegistry.TRANSFUR_VARIANT.get();
             FORM_VARIANTS.clear();
+            int blacklistCount = 0;
             for (TransfurVariant<?> variant : registry.getValues()) {
                 var id = variant.getFormId();
                 if (id == null) continue;
                 String path = id.getPath();
                 if (!path.startsWith("form_")) continue;
                 if (BLACKLIST.contains(path)) {
-                    changede.LOGGER.debug("Blacklist skip: {}", id);
+                    blacklistCount++;
                     continue;
                 }
                 FORM_VARIANTS.add(variant);
-                changede.LOGGER.debug("Added variant: {}", id);
             }
-            changede.LOGGER.debug("Final variant count: {}", FORM_VARIANTS.size());
+            changede.LOGGER.info("Latex start variants prepared: usable={}, blacklisted={}", FORM_VARIANTS.size(), blacklistCount);
         });
     }
 

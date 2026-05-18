@@ -38,13 +38,13 @@ public class CELPRegister {
                     () -> new BlockItem(BASIC_WIRE.get(), new Item.Properties()));
 
     public static final RegistryObject<Block> BASIC_GENERATOR =
-            BLOCKS.register("basic_generator", BasicGeneratorBlock::new);
+            BLOCKS.register("basic_generator",()-> new BasicGeneratorBlock(BlockBehaviour.Properties.of()));
 
     public static final RegistryObject<Item> BASIC_GENERATOR_ITEM =
             ITEMS.register("basic_generator",
                     () -> new BlockItem(BASIC_GENERATOR.get(), new Item.Properties()));
     public static final RegistryObject<Block> ELECTRIC_FURNACE =
-            BLOCKS.register("electric_furnace", ElectricFurnaceBlock::new);
+            BLOCKS.register("electric_furnace",()-> new  ElectricFurnaceBlock(BlockBehaviour.Properties.of()));
 
     public static final RegistryObject<Item> ELECTRIC_FURNACE_ITEM=
             ITEMS.register("electric_furnace",

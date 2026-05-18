@@ -2,15 +2,14 @@
   "required": true,
   "minVersion": "0.8",
   "package": "github.com.gengyoubo.mixins",
+  "plugin": "github.com.gengyoubo.mixins.ChangedEMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "changede.refmap.json",
   "mixins": [
     "CommandTransfurMixin",
-    "GooCoreBlockMixin",
     "LatexSyringeMixin",
     "PatreonBenefitsMixin",
     "ServerPlayerSpecialVariantMixin",
-    "SignalCatcherItemMixin",
     "SyncTransfurPacketListingAccessor",
     "SyncTransfurPacketMixin",
     "TransfurVariantsInfoMixin",
@@ -25,6 +24,7 @@
   "server": [
   ],
   "client": [
-    "ClientEventMixin"
+    "ClientEventMixin",
+    "SignalCatcherItemMixin"
   ]
 }

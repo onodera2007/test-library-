@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "level=0": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=1": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=2": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=3": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=4": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=5": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=6": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=7": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=8": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=9": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=10": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=11": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=12": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=13": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=14": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    },
+    "level=15": {
+      "model": "changed:block/wolf_gas_canister_lower"
+    }
+  }
+}

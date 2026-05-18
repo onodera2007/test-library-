@@ -13,14 +13,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = "changede")
 public class ScorchingHeatEvents {
-@SubscribeEvent
 public static void onBreak(BlockEvent.BreakEvent event) {
 
     Player player = event.getPlayer();

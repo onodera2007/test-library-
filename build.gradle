@@ -16,6 +16,55 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'org.spongepowered.mixin' version '0.7.+'
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+def clientCoverageExecFile = layout.buildDirectory.file('jacoco/runClientCoverage.exec').get().asFile
+def startupJfrFile = layout.buildDirectory.file('jfr/startup.jfr').get().asFile
+def coverageDependencyJars = files({
+    configurations.runtimeClasspath.files.findAll { file ->
+        file.name.contains('changed-minecraft-mod-661527') || file.name.contains('changed-addon-plus-711303')
+    }
+})
+
+tasks.named('test') {
+    finalizedBy 'jacocoTestReport'
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn 'test'
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = true
+    }
+}
+
+tasks.register('jacocoRunClientReport', JacocoReport) {
+    group = 'verification'
+    description = 'Generates a JaCoCo report from the runClientCoverage Forge client session.'
+    executionData.from(clientCoverageExecFile)
+    classDirectories.from(sourceSets.main.output)
+    classDirectories.from(coverageDependencyJars.collect { jarFile ->
+        zipTree(jarFile).matching {
+            include 'net/ltxprogrammer/changed/**/*.class'
+            include 'net/foxyas/changedaddon/**/*.class'
+        }
+    })
+    sourceDirectories.from(sourceSets.main.allSource.srcDirs)
+    additionalSourceDirs.from(sourceSets.main.allSource.srcDirs)
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+    onlyIf {
+        clientCoverageExecFile.exists()
+    }
 }
 
 mixin {
@@ -32,6 +81,7 @@ group = mod_group_id
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 dependencies {
+    jacocoAgent "org.jacoco:org.jacoco.agent:${jacoco.toolVersion}:runtime"
     //原版
     minecraft "net.minecraftforge:forge:1.20.1-47.4.10"
     //changed类
@@ -64,6 +114,7 @@ minecraft {
         client {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'info'
+
             mods {
                 changede {
                     source sourceSets.main
@@ -71,6 +122,18 @@ minecraft {
             }
         }
         //正式环境
+        create("clientCoverage") {
+            parent null, "client"
+            taskName "runClientCoverage"
+            workingDirectory project.file('run-coverage')
+            property 'forge.logging.console.level', 'info'
+        }
+        create("clientJfr") {
+            parent null, "client"
+            taskName "runClientJfr"
+            workingDirectory project.file('run-jfr')
+            property 'forge.logging.console.level', 'info'
+        }
         create("clientProd") {
             parent null, "client"
             taskName "runClientProd"
@@ -124,6 +187,7 @@ repositories {
     maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
 }
 tasks.named('processResources', ProcessResources).configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     var replaceProperties = [
             minecraft_version: minecraft_version,
             minecraft_version_range: minecraft_version_range,
@@ -136,6 +200,7 @@ tasks.named('processResources', ProcessResources).configure {
             mod_version: mod_version,
             mod_authors: mod_authors,
             mod_description: mod_description,
+            displayURL: displayURL,
     ]
     inputs.properties replaceProperties
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
@@ -220,5 +285,20 @@ tasks.register('prepareProdRun', Copy) {
 tasks.configureEach {
     if (name.toLowerCase() == 'runclientprod') {
         dependsOn 'prepareProdRun'
+    }
+    if (name.toLowerCase() == 'runclientcoverage') {
+        finalizedBy 'jacocoRunClientReport'
+        doFirst {
+            mkdir(clientCoverageExecFile.parentFile)
+            delete clientCoverageExecFile
+            jvmArgs "-javaagent:${configurations.jacocoAgent.singleFile}=destfile=${clientCoverageExecFile.absolutePath},append=false,includes=github.com.gengyoubo.*:net.ltxprogrammer.changed.*:net.foxyas.changedaddon.*"
+        }
+    }
+    if (name.toLowerCase() == 'runclientjfr') {
+        doFirst {
+            mkdir(startupJfrFile.parentFile)
+            delete startupJfrFile
+            jvmArgs "-XX:StartFlightRecording=filename=${startupJfrFile.absolutePath},dumponexit=true,settings=profile"
+        }
     }
 }

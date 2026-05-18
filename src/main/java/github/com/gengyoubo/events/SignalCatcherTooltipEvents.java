@@ -5,13 +5,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class SignalCatcherTooltipEvents {
     private static final String SIGNAL_CATCHER_ITEM_CLASS = "net.foxyas.changedaddon.item.SignalCatcherItem";
 
-    @SubscribeEvent
-    public void onItemTooltip(ItemTooltipEvent event) {
+    public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         if (!SIGNAL_CATCHER_ITEM_CLASS.equals(stack.getItem().getClass().getName())) {
             return;

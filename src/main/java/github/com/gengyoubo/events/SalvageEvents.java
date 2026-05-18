@@ -7,13 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-
-@Mod.EventBusSubscriber(modid = "changede")
 public class SalvageEvents {
-
-    @SubscribeEvent
     public static void onBreak(PlayerDestroyItemEvent event) {
 
         ItemStack stack = event.getOriginal();
@@ -30,7 +24,6 @@ public class SalvageEvents {
         }
     }
 
-    @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
 
         Player player = event.getPlayer();
