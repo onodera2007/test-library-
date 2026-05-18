@@ -4,6 +4,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.LoadingModList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -12,15 +14,23 @@ import java.util.List;
 import java.util.Set;
 
 public class ChangedEMixinPlugin implements IMixinConfigPlugin {
+    private static final Logger LOGGER = LogManager.getLogger("changede-mixin-plugin");
     private static final String PROJECT_EXTENDED_PREFIX = "github.com.gengyoubo.projectextended.mixins.";
     private static final Set<String> ADDON_CLIENT_MIXINS = Set.of(
             "github.com.gengyoubo.mixins.ClientEventMixin",
-            "github.com.gengyoubo.mixins.SignalCatcherItemMixin"
+            "github.com.gengyoubo.mixins.SignalCatcherItemMixin",
+            "github.com.gengyoubo.mixins.TransfurVariantsInfoMixin"
     );
     private static final boolean ADDON_LIGHT_MODE = Boolean.parseBoolean(System.getProperty("changede.mixin.addonLight", "false"));
 
     @Override
     public void onLoad(String mixinPackage) {
+        LOGGER.info(
+                "ChangedE mixin plugin loaded: addonLight={}, dist={}, changed_addon_loaded={}",
+                ADDON_LIGHT_MODE,
+                FMLEnvironment.dist,
+                isModLoaded("changed_addon")
+        );
     }
 
     @Override
