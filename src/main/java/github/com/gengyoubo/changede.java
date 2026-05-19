@@ -125,7 +125,7 @@ public class changede {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(this::startPatreonSyncAsync);
         // Use raw content endpoint. "tree/main" is a GitHub HTML page and will break JSON parsing.
-        PatreonBenefitsFix.addRepositoryBase("https://raw.githubusercontent.com/gengyoubo/changed-extra/main/CEbenefits");
+        //PatreonBenefitsFix.addRepositoryBase("https://raw.githubusercontent.com/gengyoubo/changed-extra/main/CEbenefits");
     }
 
     private void startPatreonSyncAsync() {

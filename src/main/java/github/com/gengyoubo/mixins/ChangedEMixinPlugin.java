@@ -17,6 +17,7 @@ public class ChangedEMixinPlugin implements IMixinConfigPlugin {
     private static final Logger LOGGER = LogManager.getLogger("changede-mixin-plugin");
     private static final String PROJECT_EXTENDED_PREFIX = "github.com.gengyoubo.projectextended.mixins.";
     private static final Set<String> ADDON_CLIENT_MIXINS = Set.of(
+            "github.com.gengyoubo.mixins.AccessorySlotsSafetyMixin",
             "github.com.gengyoubo.mixins.ClientEventMixin",
             "github.com.gengyoubo.mixins.SignalCatcherItemMixin",
             "github.com.gengyoubo.mixins.TransfurVariantsInfoMixin"

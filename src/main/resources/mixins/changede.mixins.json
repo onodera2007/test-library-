@@ -25,6 +25,7 @@
   "server": [
   ],
   "client": [
+    "AccessorySlotsSafetyMixin",
     "ClientEventMixin",
     "SignalCatcherItemMixin"
   ]
