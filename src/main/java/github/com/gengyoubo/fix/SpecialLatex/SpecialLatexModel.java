@@ -42,6 +42,21 @@ public class SpecialLatexModel extends AdvancedHumanoidModel<SpecialLatex> {
         return null;
     }
 
+    private static boolean hasAnyChild(ModelPart parent, String... names) {
+        for (String name : names) {
+            if (parent.hasChild(name)) return true;
+        }
+        return false;
+    }
+
+    private static ModelPart unwrapWingContainer(ModelPart group, boolean left) {
+        if (group == null) return null;
+        ModelPart nested = left
+                ? getFirstPresentChild(group, "LeftWing", "leftWing", "leftwing", "WingL", "wingL")
+                : getFirstPresentChild(group, "RightWing", "rightWing", "rightwing", "RightWing3", "WingR", "wingR");
+        return nested != null ? nested : group;
+    }
+
     public SpecialLatexModel(ModelPart root, PatreonBenefits.ModelData form) {
         super(root);
         this.rightLeg = root.getChild("RightLeg");
@@ -67,51 +82,79 @@ public class SpecialLatexModel extends AdvancedHumanoidModel<SpecialLatex> {
                     ? AnimatorPresets.aquaticTail(tail, List.of())
                     : AnimatorPresets.standardTail(tail, List.of()));
         }
-        if (form.animationData().hasWings()) {
-            ModelPart rightWing = getChildIfPresent(torso, "RightWing");
-            ModelPart leftWing = getChildIfPresent(torso, "LeftWing");
-            if (leftWing != null && rightWing != null) {
-                this.animator.addPreset(AnimatorPresets.wingedOld(leftWing, rightWing));
-            } else {
-                Changed.LOGGER.warn("SpecialLatexModel wingedOld enabled but missing wing groups: left={} right={}",
-                        leftWing != null, rightWing != null);
-            }
-        } else if (form.animationData().hasWingsV2()) {
-            ModelPart rightWing = getChildIfPresent(torso, "RightWing");
-            ModelPart leftWing = getChildIfPresent(torso, "LeftWing");
-            if (leftWing != null && rightWing != null) {
-                ModelPart leftWingRoot = getFirstPresentChild(leftWing, "WingRoot", "leftWingRoot");
-                ModelPart rightWingRoot = getFirstPresentChild(rightWing, "WingRoot2", "rightWingRoot");
+        boolean hasWingsFlag = form.animationData().hasWings();
+        boolean hasWingsV2Flag = form.animationData().hasWingsV2();
+
+        ModelPart leftWingGroup = getFirstPresentChild(torso,
+                "LeftWing", "leftWing", "leftwing",
+                "LeftWings", "leftWings", "leftwings");
+        ModelPart rightWingGroup = getFirstPresentChild(torso,
+                "RightWing", "rightWing", "rightwing",
+                "RightWings", "rightWings", "rightwings");
+        leftWingGroup = unwrapWingContainer(leftWingGroup, true);
+        rightWingGroup = unwrapWingContainer(rightWingGroup, false);
+        boolean wingsDetected = leftWingGroup != null && rightWingGroup != null;
+        boolean wingAnimationAdded = false;
+        String wingAnimationMode = "none";
+
+        if (wingsDetected) {
+            boolean preferV2 = hasWingsV2Flag || !hasWingsFlag;
+
+            if (preferV2) {
+                ModelPart leftWingRoot = getFirstPresentChild(leftWingGroup, "WingRoot", "leftWingRoot", "WingRoot2");
+                ModelPart rightWingRoot = getFirstPresentChild(rightWingGroup, "WingRoot2", "rightWingRoot", "WingRoot");
+                if (leftWingRoot == null && hasAnyChild(leftWingGroup, "bone3", "leftSecondaries", "bone")) {
+                    leftWingRoot = leftWingGroup;
+                }
+                if (rightWingRoot == null && hasAnyChild(rightWingGroup, "bone", "rightSecondaries", "bone3")) {
+                    rightWingRoot = rightWingGroup;
+                }
 
                 if (leftWingRoot != null && rightWingRoot != null) {
-                    ModelPart leftSecondary = getFirstPresentChild(leftWingRoot, "bone3", "leftSecondaries");
+                    ModelPart leftSecondary = getFirstPresentChild(leftWingRoot, "bone3", "leftSecondaries", "bone");
                     ModelPart leftTertiary = leftSecondary != null
-                            ? getFirstPresentChild(leftSecondary, "bone4", "leftTertiaries")
+                            ? getFirstPresentChild(leftSecondary, "bone4", "leftTertiaries", "bone2")
                             : null;
 
-                    ModelPart rightSecondary = getFirstPresentChild(rightWingRoot, "bone", "rightSecondaries");
+                    ModelPart rightSecondary = getFirstPresentChild(rightWingRoot, "bone", "rightSecondaries", "bone3");
                     ModelPart rightTertiary = rightSecondary != null
-                            ? getFirstPresentChild(rightSecondary, "bone2", "rightTertiaries")
+                            ? getFirstPresentChild(rightSecondary, "bone2", "rightTertiaries", "bone4")
                             : null;
 
                     if (leftSecondary != null && leftTertiary != null && rightSecondary != null && rightTertiary != null) {
                         this.animator.addPreset(AnimatorPresets.wingedV2(
                                 leftWingRoot, leftSecondary, leftTertiary,
                                 rightWingRoot, rightSecondary, rightTertiary));
-                    } else {
-                        Changed.LOGGER.warn("SpecialLatexModel wingedV2 missing wing chain nodes: " +
-                                        "leftRoot={} leftSecondary={} leftTertiary={} rightRoot={} rightSecondary={} rightTertiary={}",
-                                leftWingRoot != null, leftSecondary != null, leftTertiary != null,
-                                rightWingRoot != null, rightSecondary != null, rightTertiary != null);
+                        wingAnimationAdded = true;
+                        wingAnimationMode = "v2";
+                    } else if (leftSecondary != null && rightSecondary != null) {
+                        // Legacy two-stage wing rigs can animate more naturally with legacyWinged.
+                        ModelPart leftThird = leftTertiary != null ? leftTertiary : leftSecondary;
+                        ModelPart rightThird = rightTertiary != null ? rightTertiary : rightSecondary;
+                        this.animator.addPreset(AnimatorPresets.legacyWinged(
+                                leftWingRoot, leftSecondary, leftThird,
+                                rightWingRoot, rightSecondary, rightThird
+                        ));
+                        wingAnimationAdded = true;
+                        wingAnimationMode = "legacy";
                     }
-                } else {
-                    Changed.LOGGER.warn("SpecialLatexModel wingedV2 missing wing root nodes: leftRoot={} rightRoot={}",
-                            leftWingRoot != null, rightWingRoot != null);
                 }
-            } else {
-                Changed.LOGGER.warn("SpecialLatexModel wingedV2 enabled but missing wing groups: left={} right={}",
-                        leftWing != null, rightWing != null);
             }
+
+            if (!wingAnimationAdded) {
+                this.animator.addPreset(AnimatorPresets.wingedOld(leftWingGroup, rightWingGroup));
+                wingAnimationAdded = true;
+                wingAnimationMode = "old";
+            }
+        }
+
+        if ((hasWingsFlag || hasWingsV2Flag) && !wingAnimationAdded) {
+            Changed.LOGGER.warn("SpecialLatexModel wings enabled in animation config but no usable wing nodes were found.");
+        } else if (!hasWingsFlag && !hasWingsV2Flag && wingAnimationAdded) {
+            Changed.LOGGER.info("SpecialLatexModel auto-enabled wing animation from detected wing nodes.");
+        }
+        if (wingAnimationAdded) {
+            Changed.LOGGER.info("SpecialLatexModel wing animation mode={}", wingAnimationMode);
         }
 
         this.animator.hipOffset = form.hipOffset();

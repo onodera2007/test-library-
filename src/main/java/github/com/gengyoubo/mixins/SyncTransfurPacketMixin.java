@@ -51,17 +51,27 @@ public abstract class SyncTransfurPacketMixin {
                 int formId = listing.changede$getForm();
                 TransfurVariant<?> variant = ChangedRegistry.TRANSFUR_VARIANT.getValue(formId);
                 boolean usedSpecialFallback = false;
+                var data = listing.changede$getData();
+                boolean hasData = data != null && !data.isEmpty();
+                boolean looksLikeActiveTransfur =
+                        listing.changede$getProgress() > 0.0001f ||
+                        listing.changede$isTemporaryFromSuit() ||
+                        hasData;
 
-                // Dynamic special variants may be synced as NO_FORM (-1), so always try UUID fallback.
-                if (variant == null) {
+                // Dynamic special variants may be synced as NO_FORM (-1), but NO_FORM is also used by untf.
+                // Only use special fallback when packet clearly represents an active transfur state.
+                if (variant == null && looksLikeActiveTransfur) {
                     variant = PatreonBenefitsFix.getPlayerSpecialVariant(player.getUUID());
                     usedSpecialFallback = variant != null;
                 }
                 Changed.LOGGER.debug(
-                        "SyncTransfurPacket client entityId={} player={} formId={} variant={} fallback={}",
+                        "SyncTransfurPacket client entityId={} player={} formId={} progress={} hasData={} temp={} variant={} fallback={}",
                         entityId,
                         player.getScoreboardName(),
                         formId,
+                        listing.changede$getProgress(),
+                        hasData,
+                        listing.changede$isTemporaryFromSuit(),
                         variant == null ? "null" : variant.getFormId(),
                         usedSpecialFallback
                 );

@@ -4,6 +4,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import github.com.gengyoubo.fix.SpecialLatex.PatreonBenefitsFix;
 import github.com.gengyoubo.fix.SpecialLatex.SpecialLatex;
+import net.ltxprogrammer.changed.Changed;
 import net.ltxprogrammer.changed.command.CommandTransfur;
 import net.ltxprogrammer.changed.entity.TransfurCause;
 import net.ltxprogrammer.changed.entity.TransfurContext;
@@ -24,8 +25,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 @Mixin(value = CommandTransfur.class,remap = false)
 public class CommandTransfurMixin {
+    @Unique
+    private static final String CHANGED_EXTRA_TAG_HUMAN_LOCK = "latex_start_human_lock";
+    @Unique
+    private static final String CHANGED_EXTRA_TAG_LATEX_START_VARIANT = "latex_start_variant";
+    @Unique
+    private static final String CHANGED_E_SPECIAL_FORM_ID = "ChangedESpecialFormId";
+
     @Final
     @Shadow
     private static SimpleCommandExceptionType NOT_CAUSE;
@@ -66,6 +77,20 @@ public class CommandTransfurMixin {
             CompoundTag tag,
             CallbackInfoReturnable<Integer> cir
     ) throws CommandSyntaxException {
+        String stackSnippet = StackWalker.getInstance()
+                .walk(stream -> stream
+                        .skip(1)
+                        .limit(8)
+                        .map(frame -> frame.getClassName() + "#" + frame.getMethodName() + ":" + frame.getLineNumber())
+                        .collect(Collectors.joining(" <- ")));
+        Changed.LOGGER.warn(
+                "[Trace] CommandTransfur.transfurPlayer called player={} form={} cause={} stack={}",
+                player.getGameProfile().getName(),
+                form,
+                cause,
+                stackSnippet
+        );
+
         if (!form.equals(TransfurVariant.SPECIAL_LATEX) && !PatreonBenefitsFix.isSpecialFormId(form))
             return;
         if (ChangedCompatibility.isPlayerUsedByOtherMod(player))
@@ -113,5 +138,36 @@ public class CommandTransfurMixin {
                 )
         );
         cir.setReturnValue(1);
+    }
+
+    @Inject(method = "untransfurPlayer", at = @At("TAIL"))
+    private static void changed_extra$onUntransfurPlayer(
+            CommandSourceStack source,
+            ServerPlayer player,
+            CallbackInfoReturnable<Integer> cir
+    ) {
+        // Respect explicit untf command across relog:
+        // 1) keep human lock
+        // 2) clear remembered latex/special form markers
+        var data = player.getPersistentData();
+        data.putBoolean(CHANGED_EXTRA_TAG_HUMAN_LOCK, true);
+        data.remove(CHANGED_EXTRA_TAG_LATEX_START_VARIANT);
+        data.remove(CHANGED_E_SPECIAL_FORM_ID);
+        Changed.LOGGER.warn("[Trace] untransfurPlayer set human lock for {}", player.getGameProfile().getName());
+    }
+
+    @Inject(method = "untransfurPlayers", at = @At("TAIL"))
+    private static void changed_extra$onUntransfurPlayers(
+            CommandSourceStack source,
+            Collection<ServerPlayer> players,
+            CallbackInfoReturnable<Integer> cir
+    ) {
+        players.forEach(player -> {
+            var data = player.getPersistentData();
+            data.putBoolean(CHANGED_EXTRA_TAG_HUMAN_LOCK, true);
+            data.remove(CHANGED_EXTRA_TAG_LATEX_START_VARIANT);
+            data.remove(CHANGED_E_SPECIAL_FORM_ID);
+            Changed.LOGGER.warn("[Trace] untransfurPlayers set human lock for {}", player.getGameProfile().getName());
+        });
     }
 }

@@ -145,8 +145,29 @@ public class SpecialLatex extends ChangedEntity {
             if (event.phase != TickEvent.Phase.END) return;
 
             Player player = event.player;
+            if (player.level().isClientSide) return;
             ProcessTransfur.getPlayerTransfurVariantSafe(player).ifPresent(instance -> {
-                if (instance.getChangedEntity() instanceof SpecialLatex specialLatex && specialLatex.specialLatexForm == null) {
+                if (!(instance.getChangedEntity() instanceof SpecialLatex specialLatex)) return;
+
+                // Player may load before special-form data finishes syncing.
+                // If we currently hold fallback SPECIAL_LATEX, upgrade to player-specific special variant when available.
+                TransfurVariant<?> desiredVariant = PatreonBenefitsFix.getPlayerSpecialVariant(player.getUUID());
+                if (desiredVariant != null && instance.getParent() != desiredVariant) {
+                    float progress = instance.getTransfurProgression(1.0f);
+                    boolean temporaryFromSuit = instance.isTemporaryFromSuit();
+                    var data = instance.save();
+
+                    ProcessTransfur.setPlayerTransfurVariant(player, desiredVariant, null, progress, temporaryFromSuit);
+                    ProcessTransfur.getPlayerTransfurVariantSafe(player).ifPresent(newInstance -> {
+                        newInstance.load(data);
+                        if (newInstance.getChangedEntity() instanceof SpecialLatex rebound) {
+                            rebound.setSpecialForm(player.getUUID());
+                        }
+                    });
+                    return;
+                }
+
+                if (specialLatex.specialLatexForm == null) {
                     specialLatex.setSpecialForm(player.getUUID());
                 }
             });

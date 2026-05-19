@@ -38,8 +38,6 @@ public class latexStartEvents {
 
         var rules = player.level().getGameRules();
         rules.getRule(ChangedGameRules.RULE_KEEP_BRAIN).set(true, player.server);
-        boolean keepForm = rules.getBoolean(ChangedGameRules.RULE_KEEP_FORM);
-
         CompoundTag data = player.getPersistentData();
         if (!data.contains(TAG_VARIANT) && ProcessTransfur.isPlayerTransfurred(player)) {
             ProcessTransfur.getPlayerTransfurVariantSafe(player)
@@ -47,13 +45,26 @@ public class latexStartEvents {
         }
 
         if (ProcessTransfur.isPlayerTransfurred(player)) {
+            changede.LOGGER.info(
+                    "[LatexStart] join-skip already transfurred player={} variantTag={} humanLock={}",
+                    player.getGameProfile().getName(),
+                    data.contains(TAG_VARIANT) ? data.getString(TAG_VARIANT) : "<none>",
+                    data.getBoolean(TAG_HUMAN_LOCK)
+            );
             data.remove(TAG_HUMAN_LOCK);
             return;
         }
 
-        // keepForm is on + human lock exists => keep human form, skip forced latex restore
-        if (keepForm && data.getBoolean(TAG_HUMAN_LOCK)) {
-            changede.LOGGER.debug("keepForm enabled; skip latex restore for {}", player.getGameProfile().getName());
+        // Human lock exists => keep human form, skip forced latex restore.
+        // This lock is set when player explicitly untf, so command intent is respected across relog.
+        if (data.getBoolean(TAG_HUMAN_LOCK)) {
+            // Explicit untf state: also clear remembered variant so later flow won't reuse stale form.
+            data.remove(TAG_VARIANT);
+            changede.LOGGER.info(
+                    "[LatexStart] join-skip human-lock player={} variantTag={}",
+                    player.getGameProfile().getName(),
+                    data.contains(TAG_VARIANT) ? data.getString(TAG_VARIANT) : "<none>"
+            );
             return;
         }
 
@@ -72,8 +83,17 @@ public class latexStartEvents {
             variant = ChangedTransfurVariants.FALLBACK_VARIANT.get();
         }
 
+        boolean hadVariantTag = data.contains(TAG_VARIANT);
+        boolean hadHumanLock = data.getBoolean(TAG_HUMAN_LOCK);
         data.putString(TAG_VARIANT, variant.getFormId().toString());
         data.remove(TAG_HUMAN_LOCK);
+        changede.LOGGER.warn(
+                "[LatexStart] forcing transfur on join player={} variant={} hadVariantTag={} humanLock={}",
+                player.getGameProfile().getName(),
+                variant.getFormId(),
+                hadVariantTag,
+                hadHumanLock
+        );
         ProcessTransfur.setPlayerTransfurVariant(player, variant, (TransfurContext) null);
         changede.LOGGER.debug("Assigned player variant: {}", variant.getFormId());
     }
