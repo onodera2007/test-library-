@@ -2,6 +2,7 @@ package github.com.gengyoubo.fix.SpecialLatex;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.ltxprogrammer.changed.Changed;
 import net.ltxprogrammer.changed.ability.AbstractAbility;
@@ -48,13 +49,17 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
     public final ImmutableList<Function<EntityType<?>, ? extends AbstractAbility<?>>> abilities;
     public final float cameraZOffset;
     public final ResourceLocation sound;
+    public final float groundSpeed;
+    public final float swimSpeed;
+    public final float flySpeed;
     private ResourceLocation formId;
     public OldTransfurVariant(Supplier<EntityType<T>> ctor,
                               LatexType type,
                            float jumpStrength, BreatheMode breatheMode, float stepSize, boolean canGlide, int extraJumpCharges,
                            boolean reducedFall, boolean canClimb,
                            VisionType visionType, MiningStrength miningStrength, UseItemMode itemUseMode, List<Class<? extends PathfinderMob>> scares, TransfurMode transfurMode,
-                           List<Function<EntityType<?>, ? extends AbstractAbility<?>>> abilities, float cameraZOffset,ResourceLocation sound) {
+                           List<Function<EntityType<?>, ? extends AbstractAbility<?>>> abilities, float cameraZOffset, ResourceLocation sound,
+                           float groundSpeed, float swimSpeed, float flySpeed) {
         super(ctor,breatheMode,canGlide,extraJumpCharges,canClimb,visionType,miningStrength,itemUseMode,  (entity, mob) ->
                 scares.stream().anyMatch(clazz -> clazz.isInstance(mob)),transfurMode,abilities,cameraZOffset,sound);
         this.ctor = ctor;
@@ -74,6 +79,9 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
         this.transfurMode = transfurMode;
         this.cameraZOffset = cameraZOffset;
         this.sound = sound;
+        this.groundSpeed = groundSpeed;
+        this.swimSpeed = swimSpeed;
+        this.flySpeed = flySpeed;
     }
 
     public static int getNextEntId() {
@@ -104,6 +112,60 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
                     "Invalid {} '{}' for variant {}. Falling back to {}.",
                     fieldName, rawValue, variantId, defaultValue
             );
+            return defaultValue;
+        }
+    }
+
+    private static JsonElement findFieldIgnoreCase(JsonObject root, String... keys) {
+        if (root == null || keys == null) return null;
+        for (String key : keys) {
+            if (key == null || key.isBlank()) continue;
+            if (root.has(key)) return root.get(key);
+            for (String candidate : root.keySet()) {
+                if (candidate.equalsIgnoreCase(key)) {
+                    return root.get(candidate);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String getStringCompat(JsonObject root, String defaultValue, String... keys) {
+        JsonElement el = findFieldIgnoreCase(root, keys);
+        if (el == null || el.isJsonNull()) return defaultValue;
+        try {
+            return el.getAsString();
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
+    }
+
+    private static float getFloatCompat(JsonObject root, float defaultValue, String... keys) {
+        JsonElement el = findFieldIgnoreCase(root, keys);
+        if (el == null || el.isJsonNull()) return defaultValue;
+        try {
+            return el.getAsFloat();
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
+    }
+
+    private static int getIntCompat(JsonObject root, int defaultValue, String... keys) {
+        JsonElement el = findFieldIgnoreCase(root, keys);
+        if (el == null || el.isJsonNull()) return defaultValue;
+        try {
+            return el.getAsInt();
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
+    }
+
+    private static boolean getBooleanCompat(JsonObject root, boolean defaultValue, String... keys) {
+        JsonElement el = findFieldIgnoreCase(root, keys);
+        if (el == null || el.isJsonNull()) return defaultValue;
+        try {
+            return el.getAsBoolean();
+        } catch (Exception ignored) {
             return defaultValue;
         }
     }
@@ -140,7 +202,11 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
 
     public static OldTransfurVariant<?> fromJson(ResourceLocation id, JsonObject root, List<AbstractAbility<?>> injectAbilities) {
         assert ChangedEntitiesFix.SPECIAL_LATEX.getId() != null;
-        ResourceLocation entityType = ResourceLocation.tryParse(GsonHelper.getAsString(root, "entity", ChangedEntitiesFix.SPECIAL_LATEX.getId().toString()));
+        ResourceLocation entityType = ResourceLocation.tryParse(getStringCompat(
+                root,
+                ChangedEntitiesFix.SPECIAL_LATEX.getId().toString(),
+                "entity"
+        ));
         EntityType<? extends ChangedEntity> resolvedEntityType = resolveChangedEntityType(entityType);
         if (resolvedEntityType == null) {
             Changed.LOGGER.warn("Invalid entity type '{}' for variant {}. Falling back to {}.",
@@ -179,10 +245,10 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
                 .filter(Objects::nonNull)
                 .forEach(ability -> nAbilitiesList.add(type -> ability));
 
-        boolean nightVision = GsonHelper.getAsBoolean(root, "nightVision", false);
-        boolean weakMining = GsonHelper.getAsBoolean(root, "weakMining", false);
+        boolean nightVision = getBooleanCompat(root, false, "nightVision", "nightvision");
+        boolean weakMining = getBooleanCompat(root, false, "weakMining", "weakmining");
         ResourceLocation latexTypeId = ResourceLocation.tryParse(
-                GsonHelper.getAsString(root, "latexType", "changed:none")
+                getStringCompat(root, "changed:none", "latexType", "latextype")
         );
 
         var latexType = latexTypeId != null
@@ -195,47 +261,70 @@ public class OldTransfurVariant<T extends ChangedEntity>  extends TransfurVarian
 
         BreatheMode breatheMode = parseEnumOrDefault(
                 BreatheMode.class,
-                GsonHelper.getAsString(root, "breatheMode", BreatheMode.NORMAL.toString()),
+                getStringCompat(root, BreatheMode.NORMAL.toString(), "breatheMode", "breathemode"),
                 BreatheMode.NORMAL,
                 id,
                 "breatheMode"
         );
         UseItemMode useItemMode = parseEnumOrDefault(
                 UseItemMode.class,
-                GsonHelper.getAsString(root, "itemUseMode", UseItemMode.NORMAL.toString()),
+                getStringCompat(root, UseItemMode.NORMAL.toString(), "itemUseMode", "itemusemode"),
                 UseItemMode.NORMAL,
                 id,
                 "itemUseMode"
         );
         TransfurMode transfurMode = parseEnumOrDefault(
                 TransfurMode.class,
-                GsonHelper.getAsString(root, "transfurMode", TransfurMode.REPLICATION.toString()),
+                getStringCompat(root, TransfurMode.REPLICATION.toString(), "transfurMode", "transfurmode"),
                 TransfurMode.REPLICATION,
                 id,
                 "transfurMode"
         );
         ResourceLocation soundId = parseSoundOrDefault(root, id);
 
+        float groundSpeed = getFloatCompat(root, 1.0f, "groundSpeed", "groundspeed", "landSpeed", "landspeed", "landMultiplier", "landmultiplier");
+        float swimSpeed = getFloatCompat(root, 1.0f, "swimSpeed", "swimspeed", "swimMultiplier", "swimmultiplier");
+        float flySpeed = getFloatCompat(root, 1.0f, "flySpeed", "flyspeed", "flightSpeed", "flightspeed");
+
         return new OldTransfurVariant<>(
                 () -> parsedEntityType,
                 latexType,
-                GsonHelper.getAsFloat(root, "jumpStrength", 1.0f),
+                getFloatCompat(root, 1.0f, "jumpStrength", "jumpstrength"),
                 breatheMode,
-                GsonHelper.getAsFloat(root, "stepSize", 0.6f),
-                GsonHelper.getAsBoolean(root, "canGlide", false),
-                GsonHelper.getAsInt(root, "extraJumpCharges", 0),
-                GsonHelper.getAsBoolean(root, "reducedFall", false),
-                GsonHelper.getAsBoolean(root, "canClimb", false),
-                VisionType.fromSerial(GsonHelper.getAsString(root, "visionType", (nightVision ? VisionType.NIGHT_VISION : VisionType.NORMAL).getSerializedName()))
+                getFloatCompat(root, 0.6f, "stepSize", "stepsize"),
+                getBooleanCompat(root, false, "canGlide", "canglide"),
+                getIntCompat(root, 0, "extraJumpCharges", "extrajumpcharges"),
+                getBooleanCompat(root, false, "reducedFall", "reducedfall"),
+                getBooleanCompat(root, false, "canClimb", "canclimb"),
+                VisionType.fromSerial(getStringCompat(root, (nightVision ? VisionType.NIGHT_VISION : VisionType.NORMAL).getSerializedName(), "visionType", "visiontype"))
                         .result().orElse(VisionType.NORMAL),
-                MiningStrength.fromSerial(GsonHelper.getAsString(root, "miningStrength", (weakMining ? MiningStrength.WEAK : MiningStrength.NORMAL).getSerializedName()))
+                MiningStrength.fromSerial(getStringCompat(root, (weakMining ? MiningStrength.WEAK : MiningStrength.NORMAL).getSerializedName(), "miningStrength", "miningstrength"))
                         .result().orElse(MiningStrength.NORMAL),
                 useItemMode,
                 scares,
                 transfurMode,
                 nAbilitiesList,
-                GsonHelper.getAsFloat(root, "cameraZOffset", 0.0F),
-                soundId).setFormId(id);
+                getFloatCompat(root, 0.0F, "cameraZOffset", "camerazoffset"),
+                soundId,
+                groundSpeed,
+                swimSpeed,
+                flySpeed).setFormId(id);
+    }
+
+    @Override
+    @SuppressWarnings("removal")
+    public float swimMultiplier() {
+        return this.swimSpeed;
+    }
+
+    @Override
+    @SuppressWarnings("removal")
+    public float landMultiplier() {
+        return this.groundSpeed;
+    }
+
+    public float flySpeed() {
+        return this.flySpeed;
     }
 
     @Override

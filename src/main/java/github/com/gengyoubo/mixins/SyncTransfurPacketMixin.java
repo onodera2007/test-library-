@@ -9,10 +9,8 @@ import net.ltxprogrammer.changed.init.ChangedRegistry;
 import net.ltxprogrammer.changed.network.packet.SyncTransfurPacket;
 import net.ltxprogrammer.changed.process.ProcessTransfur;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -87,17 +85,7 @@ public abstract class SyncTransfurPacketMixin {
             return;
         }
 
-        ServerPlayer sender = context.getSender();
-        if (sender != null) {
-            Object senderListing = this.changedForms.get(sender.getId());
-            if (senderListing != null) {
-                Changed.PACKET_HANDLER.send(
-                        PacketDistributor.ALL.noArg(),
-                        new SyncTransfurPacket((Map) Map.of(sender.getId(), senderListing))
-                );
-            }
-        }
-        context.setPacketHandled(true);
-        cir.setReturnValue(CompletableFuture.completedFuture(null));
+        // Server side: let original SyncTransfurPacket#handle run.
+        // We only override client resolution to support dynamic special/form_uuid variants.
     }
 }

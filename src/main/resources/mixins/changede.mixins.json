@@ -13,6 +13,7 @@
     "ServerPlayerSpecialVariantMixin",
     "SyncTransfurPacketListingAccessor",
     "SyncTransfurPacketMixin",
+    "TransfurVariantInstanceFlySpeedMixin",
     "TransfurVariantsInfoMixin",
     "TransfurVariantSpecialLatexMixin"
   ],
