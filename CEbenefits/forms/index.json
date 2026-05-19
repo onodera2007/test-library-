@@ -11,6 +11,10 @@
         "white"
       ],
       "shadowsize": 0.5,
+      "hipOffset": -2.0,
+      "torsoLength": 24.0,
+      "armLength": 12.0,
+      "legLength": 12.0,
       "width": 0.7,
       "height": 2,
       "animation": {

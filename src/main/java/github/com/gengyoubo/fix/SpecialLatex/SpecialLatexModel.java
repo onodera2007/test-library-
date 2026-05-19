@@ -2,6 +2,7 @@ package github.com.gengyoubo.fix.SpecialLatex;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.ltxprogrammer.changed.Changed;
 import net.ltxprogrammer.changed.client.renderer.animate.AnimatorPresets;
 import net.ltxprogrammer.changed.client.renderer.animate.HumanoidAnimator;
 import net.ltxprogrammer.changed.client.renderer.animate.arm.ArmBobAnimator;
@@ -70,6 +71,20 @@ public class SpecialLatexModel extends AdvancedHumanoidModel<SpecialLatex> {
         this.animator.torsoLength = form.torsoLength();
         this.animator.armLength = form.armLength();
         this.animator.legLength = form.legLength();
+
+        Changed.LOGGER.debug(
+                "SpecialLatexModel rig: hipOffset={} torsoLength={} armLength={} legLength={} pivots(headY={},torsoY={},rightArmY={},leftArmY={},rightLegY={},leftLegY={})",
+                this.animator.hipOffset,
+                this.animator.torsoLength,
+                this.animator.armLength,
+                this.animator.legLength,
+                this.head.y,
+                this.torso.y,
+                this.rightArm.y,
+                this.leftArm.y,
+                this.rightLeg.y,
+                this.leftLeg.y
+        );
     }
 
     @Override
