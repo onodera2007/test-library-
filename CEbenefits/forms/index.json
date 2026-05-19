@@ -4,11 +4,11 @@
     {
       "location": "8922cbbc-0c40-4262-b0b8-a153ec94ecdc",
       "particles": [
-        "black",
-        "black",
-        "black",
-        "black",
-        "black"
+        "white",
+        "white",
+        "white",
+        "white",
+        "white"
       ],
       "shadowsize": 0.5,
       "width": 0.7,
@@ -16,8 +16,8 @@
       "animation": {
         "swimtail": true
       },
-      "primaryColor": "black",
-      "secondaryColor": "black",
+      "primaryColor": "white",
+      "secondaryColor": "white",
       "version": 1,
       "variant": {
         "groundSpeed": 1.5,
