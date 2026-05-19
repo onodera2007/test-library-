@@ -2,7 +2,7 @@ package github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.F;
 
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.BasePipeBlockEntity;
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.TransportType;
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -15,7 +15,7 @@ public abstract class FluidPipeBlockEntity extends BasePipeBlockEntity {
     private final FluidStack fluid = FluidStack.EMPTY;
 
     public FluidPipeBlockEntity(BlockPos pos, BlockState state) {
-        super(CELPRegister.BASIC_WIRE_BLOCK_ENTITIES.get(), pos, state, TransportType.FLUID);
+        super(CELPBlockEntity.BASIC_WIRE_BLOCK_ENTITIES.get(), pos, state, TransportType.FLUID);
     }
 
     @Override

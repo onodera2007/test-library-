@@ -1,6 +1,6 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -24,7 +24,7 @@ public static void onBreak(BlockEvent.BreakEvent event) {
     ItemStack tool = player.getMainHandItem();
 
     int ench = EnchantmentHelper.getTagEnchantmentLevel(
-            CERegister.SCORCHINGHEAT.get(), tool);
+            CEEnchantment.SCORCHINGHEAT.get(), tool);
 
     if (ench <= 0) return;
 

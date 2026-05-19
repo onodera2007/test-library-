@@ -1,7 +1,7 @@
 package github.com.gengyoubo.LP.Block;
 
 import github.com.gengyoubo.LP.BlockEntity.MachineBlockEntity.ElectricFurnaceBlockEntity;
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import github.com.gengyoubo.LP.world.Menu.ElectricFurnaceMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -98,7 +98,7 @@ public class ElectricFurnaceBlock extends BaseEntityBlock implements EntityBlock
 
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
-        if (type != CELPRegister.ELECTRIC_FURNACE_BLOCK_ENTITY.get()) {
+        if (type != CELPBlockEntity.ELECTRIC_FURNACE_BLOCK_ENTITY.get()) {
             return null;
         }
 

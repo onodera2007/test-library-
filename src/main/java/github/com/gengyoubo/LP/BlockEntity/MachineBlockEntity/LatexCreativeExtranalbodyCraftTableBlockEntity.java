@@ -1,13 +1,15 @@
 package github.com.gengyoubo.LP.BlockEntity.MachineBlockEntity;
 
 import github.com.gengyoubo.LP.init.CELPBlockEntity;
+import github.com.gengyoubo.LP.recipe.CELPRecipes;
+import github.com.gengyoubo.LP.recipe.LatexCreativeExtranalbodyCraftingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -19,12 +21,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
-    private static final int CAPACITY = 10_000;
-    private static final int ENERGY_COST = 5;
-    private static final int MAX_PROGRESS = 100;
+public class LatexCreativeExtranalbodyCraftTableBlockEntity extends MachineBlockEntity {
+    private static final int CAPACITY = 30_000;
+    private static final int DEFAULT_ENERGY_COST = 30;
+    private static final int DEFAULT_PROCESS_TIME = 160;
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
+    private final ItemStackHandler itemHandler = new ItemStackHandler(10) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
@@ -32,18 +34,18 @@ public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
     };
     private LazyOptional<IItemHandler> itemHandlerCap = LazyOptional.of(() -> itemHandler);
 
-    public ElectricFurnaceBlockEntity(BlockPos pos, BlockState state) {
-        super(CELPBlockEntity.ELECTRIC_FURNACE_BLOCK_ENTITY.get(), pos, state, CAPACITY);
+    public LatexCreativeExtranalbodyCraftTableBlockEntity(BlockPos pos, BlockState state) {
+        super(CELPBlockEntity.LATEX_CREATIVE_EXTRANALBODY_CRAFT_TABLE_BLOCK_ENTITY.get(), pos, state, CAPACITY);
     }
 
     @Override
     protected int getEnergyCost() {
-        return ENERGY_COST;
+        return getCurrentRecipe().map(LatexCreativeExtranalbodyCraftingRecipe::getEnergyCost).orElse(DEFAULT_ENERGY_COST);
     }
 
     @Override
     protected int getMaxProgress() {
-        return MAX_PROGRESS;
+        return getCurrentRecipe().map(LatexCreativeExtranalbodyCraftingRecipe::getProcessTime).orElse(DEFAULT_PROCESS_TIME);
     }
 
     public ItemStackHandler getItemHandler() {
@@ -67,22 +69,13 @@ public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
 
     @Override
     protected boolean canProcess() {
-        if (level == null) return false;
-
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-
-        Optional<SmeltingRecipe> recipe = level.getRecipeManager()
-                .getRecipeFor(RecipeType.SMELTING, inventory, level);
-
+        Optional<LatexCreativeExtranalbodyCraftingRecipe> recipe = getCurrentRecipe();
         if (recipe.isEmpty()) {
             return false;
         }
 
         ItemStack result = recipe.get().getResultItem(level.registryAccess());
-        ItemStack output = itemHandler.getStackInSlot(1);
+        ItemStack output = itemHandler.getStackInSlot(9);
 
         if (output.isEmpty()) {
             return true;
@@ -97,32 +90,52 @@ public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
 
     @Override
     protected void processItem() {
-        if (level == null) return;
-
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-
-        Optional<SmeltingRecipe> recipe = level.getRecipeManager()
-                .getRecipeFor(RecipeType.SMELTING, inventory, level);
-
+        Optional<LatexCreativeExtranalbodyCraftingRecipe> recipe = getCurrentRecipe();
         if (recipe.isEmpty()) {
             return;
         }
 
         ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+        NonNullList<Ingredient> ingredients = recipe.get().getIngredientsGrid();
+        int width = recipe.get().getRecipeWidth();
+        int height = recipe.get().getRecipeHeight();
 
-        itemHandler.extractItem(0, 1, false);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int recipeIndex = x + y * width;
+                if (ingredients.get(recipeIndex) != Ingredient.EMPTY) {
+                    int slot = x + y * 3;
+                    itemHandler.extractItem(slot, 1, false);
+                }
+            }
+        }
 
-        ItemStack output = itemHandler.getStackInSlot(1);
+        ItemStack output = itemHandler.getStackInSlot(9);
         if (output.isEmpty()) {
-            itemHandler.setStackInSlot(1, result);
+            itemHandler.setStackInSlot(9, result);
         } else {
             output.grow(result.getCount());
         }
 
         setChanged();
+    }
+
+    private Optional<LatexCreativeExtranalbodyCraftingRecipe> getCurrentRecipe() {
+        if (level == null) {
+            return Optional.empty();
+        }
+
+        SimpleContainer inventory = new SimpleContainer(9);
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(i, itemHandler.getStackInSlot(i));
+        }
+
+        return level.getRecipeManager()
+                .getAllRecipesFor(CELPRecipes.LATEX_CREATIVE_EXTRANALBODY_CRAFTING_TYPE)
+                .stream()
+                .filter(recipe -> recipe.getId().getPath().startsWith("lectb/"))
+                .filter(recipe -> recipe.matches(inventory, level))
+                .findFirst();
     }
 
     @Override

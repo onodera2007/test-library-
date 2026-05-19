@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 public abstract class ChangedConfigCommonMixin {
     @ModifyArg(
             method = "<init>",
+            remap = false,
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraftforge/common/ForgeConfigSpec$Builder;define(Ljava/lang/String;Z)Lnet/minecraftforge/common/ForgeConfigSpec$BooleanValue;",

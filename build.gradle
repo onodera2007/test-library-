@@ -105,7 +105,7 @@ dependencies {
     implementation fg.deobf("curse.maven:jei-238222:7391695")
     //implementation fg.deobf("curse.maven:bakeries-1191781:7657697")
     //正版
-    //implementation fg.deobf("curse.maven:oauth-513857:4575495")
+    implementation fg.deobf("curse.maven:oauth-513857:4575495")
     //compileOnly()
 }
 minecraft {

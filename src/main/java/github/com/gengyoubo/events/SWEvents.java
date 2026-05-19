@@ -1,6 +1,6 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -20,9 +20,9 @@ public class SWEvents {
 
             for (ItemStack stack : attacker.getAllSlots()) {
 
-                strong += stack.getEnchantmentLevel(CERegister.SOSTRONG.get()) * 2;
+                strong += stack.getEnchantmentLevel(CEEnchantment.SOSTRONG.get()) * 2;
 
-                strong += stack.getEnchantmentLevel(CERegister.PREETTYSTRONG.get());
+                strong += stack.getEnchantmentLevel(CEEnchantment.PREETTYSTRONG.get());
             }
 
             damage += strong;
@@ -33,9 +33,9 @@ public class SWEvents {
 
         for (ItemStack stack : target.getAllSlots()) {
 
-            weak += stack.getEnchantmentLevel(CERegister.SOWEEK.get()) * 2;
+            weak += stack.getEnchantmentLevel(CEEnchantment.SOWEEK.get()) * 2;
 
-            weak += stack.getEnchantmentLevel(CERegister.PRETTYWEEK.get());
+            weak += stack.getEnchantmentLevel(CEEnchantment.PRETTYWEEK.get());
         }
 
         damage -= weak;

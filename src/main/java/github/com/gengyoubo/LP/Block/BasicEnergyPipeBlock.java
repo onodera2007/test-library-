@@ -4,7 +4,7 @@ import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.BasePipeBlockEntity;
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.TransportType;
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.E.BasicEnergyPipeBlockEntity;
 import github.com.gengyoubo.LP.ILatexEnergyHandler;
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -127,7 +127,7 @@ public class BasicEnergyPipeBlock extends BaseEntityBlock {
             @NotNull BlockState state,
             @NotNull BlockEntityType<T> type
     ) {
-        if (type != CELPRegister.BASIC_WIRE_BLOCK_ENTITIES.get()) {
+        if (type != CELPBlockEntity.BASIC_WIRE_BLOCK_ENTITIES.get()) {
             return null;
         }
 

@@ -1,8 +1,8 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
 import github.com.gengyoubo.changede;
 import github.com.gengyoubo.fix.SpecialLatex.PatreonBenefitsFix;
+import github.com.gengyoubo.init.CEGameRules;
 import net.ltxprogrammer.changed.entity.TransfurContext;
 import net.ltxprogrammer.changed.entity.variant.TransfurVariant;
 import net.ltxprogrammer.changed.init.ChangedGameRules;
@@ -28,7 +28,7 @@ public class latexStartEvents {
     private static final String TAG_HUMAN_LOCK = "latex_start_human_lock";
 
     public static boolean isLatexStart(Level level) {
-        return !level.getGameRules().getBoolean(CERegister.LATEX_START);
+        return !level.getGameRules().getBoolean(CEGameRules.LATEX_START);
     }
 
     public static void onPlayerJoin(EntityJoinLevelEvent event) {

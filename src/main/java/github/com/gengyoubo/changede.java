@@ -1,8 +1,11 @@
 package github.com.gengyoubo;
 
 import com.mojang.logging.LogUtils;
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlock;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
+import github.com.gengyoubo.LP.init.CELPItem;
 import github.com.gengyoubo.LP.network.CENetwork;
+import github.com.gengyoubo.LP.recipe.CELPRecipes;
 import github.com.gengyoubo.LP.world.Menu.CEMenus;
 import github.com.gengyoubo.commands.CheckSpecialFormCommand;
 import github.com.gengyoubo.commands.ItemInfoCommand;
@@ -22,6 +25,10 @@ import github.com.gengyoubo.fix.SpecialLatex.PatreonBenefitsFix;
 import github.com.gengyoubo.projectextended.PERegister;
 import github.com.gengyoubo.projectextended.PTotemOfUndying;
 import github.com.gengyoubo.projectextended.events.CEShieldEvents;
+import github.com.gengyoubo.init.CECreativeModeTab;
+import github.com.gengyoubo.init.CEEnchantment;
+import github.com.gengyoubo.init.CEGameRules;
+import github.com.gengyoubo.init.CEItem;
 import net.ltxprogrammer.changed.util.PatreonBenefits;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -57,19 +64,21 @@ public class changede {
 
     public changede(FMLJavaModLoadingContext context) throws InterruptedException {
         IEventBus bus = context.getModEventBus();
+
         bus.addListener(EventPriority.NORMAL, false, FMLCommonSetupEvent.class, this::commonSetup);
-        CERegister.ENCHANTMENTS.register(bus);
-        CERegister.CREATIVE_MODE_TABS.register(bus);
-        CERegister.ITEMS.register(bus);
-        CELPRegister.ITEMS.register(bus);
-        CELPRegister.WIRE_BLOCKS.register(bus);
-        CELPRegister.BLOCK_ENTITIES.register(bus);
+        CEEnchantment.ENCHANTMENTS.register(bus);
+        CECreativeModeTab.CREATIVE_MODE_TABS.register(bus);
+        CEItem.ITEMS.register(bus);
+        CELPItem.ITEMS.register(bus);
+        CELPBlock.WIRE_BLOCKS.register(bus);
+        CELPBlockEntity.BLOCK_ENTITIES.register(bus);
         ChangedEntitiesFix.REGISTRY.register(bus);
         CEChangedSounds.REGISTRY.register(bus);
         CEMenus.REGISTRY.register(bus);
+        CELPRecipes.RECIPE_SERIALIZERS.register(bus);
         PatreonBenefitsFix.REGISTRY.register(bus);
         CENetwork.register();
-        CERegister.register();
+        CEGameRules.register();
         bus.addListener(EventPriority.NORMAL, false, FMLCommonSetupEvent.class, latexStartEvents::setup);
 
         registerForgeEventListeners();

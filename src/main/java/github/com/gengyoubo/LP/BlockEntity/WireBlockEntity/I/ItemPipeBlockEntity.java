@@ -2,7 +2,7 @@ package github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.I;
 
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.BasePipeBlockEntity;
 import github.com.gengyoubo.LP.BlockEntity.WireBlockEntity.TransportType;
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -12,7 +12,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 public abstract class ItemPipeBlockEntity extends BasePipeBlockEntity {
 
     public ItemPipeBlockEntity(BlockPos pos, BlockState state) {
-        super(CELPRegister.BASIC_WIRE_BLOCK_ENTITIES.get(), pos, state, TransportType.ITEM);
+        super(CELPBlockEntity.BASIC_WIRE_BLOCK_ENTITIES.get(), pos, state, TransportType.ITEM);
     }
 
     @Override

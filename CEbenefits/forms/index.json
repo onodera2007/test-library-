@@ -1,0 +1,29 @@
+{
+  "version": 0,
+  "forms": [
+    {
+      "location": "8922cbbc-0c40-4262-b0b8-a153ec94ecdc",
+      "particles": [
+        "black",
+        "black",
+        "black",
+        "black",
+        "black"
+      ],
+      "shadowsize": 0.5,
+      "width": 0.7,
+      "height": 2,
+      "animation": {
+        "swimtail": true
+      },
+      "primaryColor": "black",
+      "secondaryColor": "black",
+      "version": 1,
+      "variant": {
+        "groundSpeed": 1.5,
+        "swimSpeed": 2,
+        "breatheMode": "ANY"
+      }
+    }
+  ]
+}
