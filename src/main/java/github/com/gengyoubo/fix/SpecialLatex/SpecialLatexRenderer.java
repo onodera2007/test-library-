@@ -178,7 +178,10 @@ public class SpecialLatexRenderer extends AdvancedHumanoidRenderer<SpecialLatex,
 
         SpecialLatexRenderer delegated = getAndCacheFor(entity);
         if (delegated == null) {
-            return true;
+            // Delegate renderer instances are constructed with null model.
+            // If dynamic renderer creation failed, do NOT fall back to super.render on this delegate,
+            // otherwise AdvancedHumanoidRenderer may crash with null model state.
+            return false;
         }
 
         rendererConsumer.accept(delegated);

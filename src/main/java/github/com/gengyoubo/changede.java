@@ -64,7 +64,6 @@ public class changede {
 
     public changede(FMLJavaModLoadingContext context) throws InterruptedException {
         IEventBus bus = context.getModEventBus();
-
         bus.addListener(EventPriority.NORMAL, false, FMLCommonSetupEvent.class, this::commonSetup);
         CEEnchantment.ENCHANTMENTS.register(bus);
         CECreativeModeTab.CREATIVE_MODE_TABS.register(bus);
@@ -125,6 +124,8 @@ public class changede {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(this::startPatreonSyncAsync);
+        // Use raw content endpoint. "tree/main" is a GitHub HTML page and will break JSON parsing.
+        PatreonBenefitsFix.addRepositoryBase("https://raw.githubusercontent.com/gengyoubo/changed-extra/main/CEbenefits");
     }
 
     private void startPatreonSyncAsync() {

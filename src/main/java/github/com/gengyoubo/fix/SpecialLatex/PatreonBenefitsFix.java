@@ -28,11 +28,15 @@ import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PatreonBenefitsFix extends PatreonBenefits {
     public static final DeferredRegister<AbstractAbility<?>> REGISTRY= ChangedRegistry.ABILITY.createDeferred("changed");
     private static final String SPECIAL_FORM_PATH_PREFIX = "special/form_";
     private static final String OFFICIAL_REPO_BASE = "https://raw.githubusercontent.com/LtxProgrammer/patreon-benefits/main/";
+    private static final Pattern GITHUB_TREE_URL = Pattern.compile("^https?://github\\.com/([^/]+)/([^/]+)/tree/([^/]+)(?:/(.*))?$");
+    private static final Pattern RAW_GITHUB_TREE_URL = Pattern.compile("^https?://raw\\.githubusercontent\\.com/([^/]+)/([^/]+)/tree/([^/]+)(?:/(.*))?$");
     private static final HttpClient TEXTURE_PROBE_CLIENT = HttpClient.newBuilder().build();
     private static final LinkedHashSet<String> EXTRA_REPO_BASES = new LinkedHashSet<>();
     private static final Map<UUID, SpecialForm> CACHED_SPECIAL_FORMS = new HashMap<>();
@@ -50,6 +54,29 @@ public class PatreonBenefitsFix extends PatreonBenefits {
         if (repoBase == null) return null;
         String trimmed = repoBase.trim();
         if (trimmed.isBlank()) return null;
+
+        // Normalize common misconfigured GitHub URLs:
+        // github.com/<owner>/<repo>/tree/<branch>/<path>
+        // raw.githubusercontent.com/<owner>/<repo>/tree/<branch>/<path>
+        // -> raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>
+        Matcher ghTree = GITHUB_TREE_URL.matcher(trimmed);
+        if (ghTree.matches()) {
+            String owner = ghTree.group(1);
+            String repo = ghTree.group(2);
+            String branch = ghTree.group(3);
+            String path = ghTree.group(4);
+            trimmed = "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch + "/" + (path == null ? "" : path);
+        } else {
+            Matcher rawTree = RAW_GITHUB_TREE_URL.matcher(trimmed);
+            if (rawTree.matches()) {
+                String owner = rawTree.group(1);
+                String repo = rawTree.group(2);
+                String branch = rawTree.group(3);
+                String path = rawTree.group(4);
+                trimmed = "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch + "/" + (path == null ? "" : path);
+            }
+        }
+
         try {
             URI uri = URI.create(trimmed);
             String scheme = uri.getScheme();
@@ -183,7 +210,8 @@ public class PatreonBenefitsFix extends PatreonBenefits {
     public static void loadSpecialForms(HttpClient client) throws Exception {
         if (!Changed.config.common.downloadPatreonContent.get()) return;
         HttpRequest request = HttpRequest.newBuilder(URI.create(FORMS_DOCUMENT)).GET().build();
-        JsonElement json = JsonParser.parseString(client.send(request, HttpResponse.BodyHandlers.ofString()).body());
+        String indexBody = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        JsonElement json = parseJsonBody(indexBody, FORMS_DOCUMENT);
         JsonArray formLocations = json.getAsJsonObject().get("forms").getAsJsonArray();
 
         AtomicInteger count = new AtomicInteger(0);
@@ -197,14 +225,12 @@ public class PatreonBenefitsFix extends PatreonBenefits {
             SpecialForm form = SpecialForm.fromJSON(
                     str -> {
                         try {
-                            URI uri = resolveFromCurrentFormsBase(str);
-                            if (uri == null) return new JsonObject();
-                            return JsonParser.parseString(
-                                    client.send(HttpRequest.newBuilder(uri).GET().build(),
-                                            HttpResponse.BodyHandlers.ofString()).body()
-                            ).getAsJsonObject();
+                            JsonObject loaded = loadJsonObjectFromFormsBases(client, str);
+                            if (loaded != null) return loaded;
+                            Changed.LOGGER.warn("Missing special form payload across all repositories: {}", str);
+                            return new JsonObject();
                         } catch (Exception e) {
-                            Changed.LOGGER.error(e);
+                            Changed.LOGGER.warn("Failed to load special form payload {}", str, e);
                             return new JsonObject();
                         }
                     },
@@ -239,6 +265,25 @@ public class PatreonBenefitsFix extends PatreonBenefits {
             base = (REPO_BASE == null || REPO_BASE.isBlank()) ? null : REPO_BASE + "forms/";
         }
         return resolveFromBase(base, relativePath);
+    }
+
+    @Nullable
+    private static JsonObject loadJsonObjectFromFormsBases(HttpClient client, String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) return null;
+        for (String formsBase : candidateFormsBases()) {
+            URI uri = resolveFromBase(formsBase, relativePath);
+            if (uri == null) continue;
+            try {
+                String payload = client.send(
+                        HttpRequest.newBuilder(uri).GET().build(),
+                        HttpResponse.BodyHandlers.ofString()
+                ).body();
+                return parseJsonBody(payload, uri.toString()).getAsJsonObject();
+            } catch (Exception ignored) {
+                // Try next repository base
+            }
+        }
+        return null;
     }
 
     @Nullable
@@ -296,6 +341,18 @@ public class PatreonBenefitsFix extends PatreonBenefits {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    private static JsonElement parseJsonBody(String body, String source) {
+        String normalized = body == null ? "" : body.strip();
+        if (normalized.startsWith("\uFEFF")) {
+            normalized = normalized.substring(1).strip();
+        }
+        if (!(normalized.startsWith("{") || normalized.startsWith("["))) {
+            String snippet = normalized.length() > 120 ? normalized.substring(0, 120) + "..." : normalized;
+            throw new IllegalStateException("Non-JSON response from " + source + ", payload starts with: " + snippet);
+        }
+        return JsonParser.parseString(normalized);
     }
 
     @SuppressWarnings("unchecked")
@@ -358,7 +415,8 @@ public class PatreonBenefitsFix extends PatreonBenefits {
                 applyRepoBase(repo);
                 try {
                     HttpRequest request = HttpRequest.newBuilder(URI.create(LINKS_DOCUMENT)).GET().build();
-                    JsonElement json = JsonParser.parseString(client.send(request, HttpResponse.BodyHandlers.ofString()).body());
+                    String listingBody = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+                    JsonElement json = parseJsonBody(listingBody, LINKS_DOCUMENT);
                     JsonArray links = json.getAsJsonObject().get("players").getAsJsonArray();
                     links.forEach(element -> {
                         JsonObject object = element.getAsJsonObject();
