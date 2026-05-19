@@ -86,6 +86,8 @@ public class SpecialLatexRenderer extends AdvancedHumanoidRenderer<SpecialLatex,
 
     private static SpecialLatexModel createSpecialModel(EntityRendererProvider.Context context, PatreonBenefits.ModelData modelData) {
         PatreonBenefits.ModelData loaded = ensureModelIsLoaded(modelData);
+        // Keep behavior aligned with upstream old renderer:
+        // prefer baked layer registered by ModelData itself.
         try {
             return new SpecialLatexModel(context.bakeLayer(loaded.modelLayerLocation().get()), loaded);
         } catch (IllegalArgumentException layerMissing) {
