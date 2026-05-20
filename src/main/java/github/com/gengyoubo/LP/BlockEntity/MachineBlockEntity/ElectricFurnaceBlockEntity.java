@@ -1,6 +1,6 @@
 package github.com.gengyoubo.LP.BlockEntity.MachineBlockEntity;
 
-import github.com.gengyoubo.LP.CELPRegister;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -33,7 +33,7 @@ public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
     private LazyOptional<IItemHandler> itemHandlerCap = LazyOptional.of(() -> itemHandler);
 
     public ElectricFurnaceBlockEntity(BlockPos pos, BlockState state) {
-        super(CELPRegister.ELECTRIC_FURNACE_BLOCK_ENTITY.get(), pos, state, CAPACITY);
+        super(CELPBlockEntity.ELECTRIC_FURNACE_BLOCK_ENTITY.get(), pos, state, CAPACITY);
     }
 
     @Override
@@ -126,14 +126,14 @@ public class ElectricFurnaceBlockEntity extends MachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Inventory", itemHandler.serializeNBT());
         tag.putInt("Progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
         progress = tag.getInt("Progress");

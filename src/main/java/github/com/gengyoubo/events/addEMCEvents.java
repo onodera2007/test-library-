@@ -1,13 +1,15 @@
 package github.com.gengyoubo.events;
 
-import net.minecraft.world.item.ItemStack;
+import github.com.gengyoubo.changede;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class addEMCEvents {
-    @SubscribeEvent
     public static void onItemPickup(EntityItemPickupEvent event) {
-        ItemStack stack = event.getItem().getItem();
-
+        if(!changede.PROJECTE){return;}
+//        InterModComms.sendTo(
+//                ProjectEAPI.PROJECTE_MODID,
+//                IMCMethods.REGISTER_CUSTOM_EMC,
+//                () -> new CustomEMCRegistration(NSSItem.createItem(Items.DIAMOND), 8192L)
+//        );
     }
 }

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "ability": {
+      "model": "changed:ability/select_special_state"
+    },
+    "": {
+      "model": "changed:ability/select_special_state"
+    }
+  }
+}

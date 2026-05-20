@@ -1,6 +1,7 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CECreativeModeTab;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -13,9 +14,9 @@ public class ModCreativeTabEvents {
     @SubscribeEvent
 public static void addBooks(BuildCreativeModeTabContentsEvent event) {
 
-    if (event.getTab() == CERegister.EE.get()) {
+    if (event.getTab() == CECreativeModeTab.EE.get()) {
 
-        for (var enchantmentEntry : CERegister.ENCHANTMENTS.getEntries()) {
+        for (var enchantmentEntry : CEEnchantment.ENCHANTMENTS.getEntries()) {
 
             var enchantment = enchantmentEntry.get();
 

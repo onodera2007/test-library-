@@ -20,7 +20,7 @@ public class CloseTextures {
                 && item != ChangedItems.DARK_LATEX_GOO.get();
     }
 
-    private static ItemStack getSlot0Item(Player player) {
+    public static ItemStack getSlot0Item(Player player) {
         if (player.containerMenu instanceof Supplier<?> supplier) {
             Object value = supplier.get();
             if (value instanceof Map<?, ?> slots) {

@@ -1,24 +1,18 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-
-@Mod.EventBusSubscriber(modid = "changede")
 public class SalvageEvents {
-
-    @SubscribeEvent
     public static void onBreak(PlayerDestroyItemEvent event) {
 
         ItemStack stack = event.getOriginal();
 
-        if (stack.getEnchantmentLevel(CERegister.SALVAGE.get()) > 0) {
+        if (stack.getEnchantmentLevel(CEEnchantment.SALVAGE.get()) > 0) {
 
             Player player = event.getEntity();
 
@@ -30,13 +24,12 @@ public class SalvageEvents {
         }
     }
 
-    @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
 
         Player player = event.getPlayer();
         ItemStack stack = player.getMainHandItem();
 
-        if (stack.getEnchantmentLevel(CERegister.SALVAGE.get()) > 0) {
+        if (stack.getEnchantmentLevel(CEEnchantment.SALVAGE.get()) > 0) {
 
             if (stack.getDamageValue() >= stack.getMaxDamage()) {
 

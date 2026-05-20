@@ -1,27 +1,26 @@
 modLoader="javafml"
-loaderVersion="[47,)"
-license="MIT License"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
 [[mods]]
-modId="changede"
-version="0.1.8"
-displayName="Changed Extra"
-updateJSONURL="https://github.com/gengyoubo/changed-extra/releases"
-displayURL="https://github.com/gengyoubo/changed-extra"
-#logoFile="examplemod.png" #optional
-authors="gengyoubo"
-description='''略'''
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="${displayURL}"
+logoFile="META-INF/modlogo.png"
+authors="${mod_authors}"
+description='''${mod_description}'''
 [[mixins]]
 config="changede.mixins.json"
 [[dependencies.changede]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1]"
+    versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
 [[dependencies.changede]]
     modId="forge"
     mandatory=true
-    versionRange="[47,)" 
+    versionRange="${forge_version_range}" 
     side="BOTH"
 [[dependencies.changede]]
     modId="changed"
@@ -32,13 +31,13 @@ config="changede.mixins.json"
 [[dependencies.changede]]
     modId="changed_addon"
     mandatory=true
-    versionRange="[2.7.3,)"
+    versionRange="[2.8.0,)"
     ordering="BEFORE"
     side="BOTH"
 [[dependencies.changede]]
     modId="projecte"
     mandatory=false
-    versionRange="[1.0.1,)"
+    versionRange="[1.0.0,)"
     ordering="BEFORE"
     side="BOTH"
 [[dependencies.changede]]

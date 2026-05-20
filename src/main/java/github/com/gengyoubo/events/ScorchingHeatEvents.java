@@ -1,6 +1,6 @@
 package github.com.gengyoubo.events;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -13,14 +13,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = "changede")
 public class ScorchingHeatEvents {
-@SubscribeEvent
 public static void onBreak(BlockEvent.BreakEvent event) {
 
     Player player = event.getPlayer();
@@ -28,7 +24,7 @@ public static void onBreak(BlockEvent.BreakEvent event) {
     ItemStack tool = player.getMainHandItem();
 
     int ench = EnchantmentHelper.getTagEnchantmentLevel(
-            CERegister.SCORCHINGHEAT.get(), tool);
+            CEEnchantment.SCORCHINGHEAT.get(), tool);
 
     if (ench <= 0) return;
 

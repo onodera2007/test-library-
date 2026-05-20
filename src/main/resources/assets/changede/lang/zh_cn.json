@@ -8,6 +8,9 @@
     "changed_addon.owner.foxyas":"允许使用，由Foxyas制作",
     "changed_addon.words1":"未关联任何变体，请使用§e<Shift+点击>关链接一个变体",
 
+    "item.changede.mimic_yufeng_wings": "拟态驭风翼",
+
+    "block.changede.latexcreative_extranalbody_craft_table_block":"胶生物外置体工艺装配台",
     "text.changed_addon.none":"无变化",
     "text.changed_addon.true":"有",
     "text.changed_addon.false":"无",
@@ -81,6 +84,7 @@
     
     "tooltip.laethin.hold_shift": "§6按住 Shift 查看详情",
     "tooltip.laethin.desc": "§n稳定的§r§m不稳定§r的反兽粉",
+    "tooltip.changede.latex_ingot.sticky": "明明烤过居然还这么粘?",
 
     "tooltip.goo_core_block.desc": "一个粘糊糊的核心，似乎被黑曜石覆盖着",
 

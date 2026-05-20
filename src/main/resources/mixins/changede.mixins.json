@@ -2,18 +2,20 @@
   "required": true,
   "minVersion": "0.8",
   "package": "github.com.gengyoubo.mixins",
+  "plugin": "github.com.gengyoubo.mixins.ChangedEMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "changede.refmap.json",
   "mixins": [
+    "ChangedConfigCommonMixin",
     "CommandTransfurMixin",
-    "GooCoreBlockMixin",
     "LatexSyringeMixin",
     "PatreonBenefitsMixin",
     "ServerPlayerSpecialVariantMixin",
     "SyncTransfurPacketListingAccessor",
     "SyncTransfurPacketMixin",
-    "TransfurVariantSpecialLatexMixin",
-    "TransfurVariantsInfoMixin"
+    "TransfurVariantInstanceFlySpeedMixin",
+    "TransfurVariantsInfoMixin",
+    "TransfurVariantSpecialLatexMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -24,6 +26,7 @@
   "server": [
   ],
   "client": [
+    "AccessorySlotsSafetyMixin",
     "ClientEventMixin",
     "SignalCatcherItemMixin"
   ]

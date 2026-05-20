@@ -16,6 +16,55 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'org.spongepowered.mixin' version '0.7.+'
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+def clientCoverageExecFile = layout.buildDirectory.file('jacoco/runClientCoverage.exec').get().asFile
+def startupJfrFile = layout.buildDirectory.file('jfr/startup.jfr').get().asFile
+def coverageDependencyJars = files({
+    configurations.runtimeClasspath.files.findAll { file ->
+        file.name.contains('changed-minecraft-mod-661527') || file.name.contains('changed-addon-plus-711303')
+    }
+})
+
+tasks.named('test') {
+    finalizedBy 'jacocoTestReport'
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn 'test'
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = true
+    }
+}
+
+tasks.register('jacocoRunClientReport', JacocoReport) {
+    group = 'verification'
+    description = 'Generates a JaCoCo report from the runClientCoverage Forge client session.'
+    executionData.from(clientCoverageExecFile)
+    classDirectories.from(sourceSets.main.output)
+    classDirectories.from(coverageDependencyJars.collect { jarFile ->
+        zipTree(jarFile).matching {
+            include 'net/ltxprogrammer/changed/**/*.class'
+            include 'net/foxyas/changedaddon/**/*.class'
+        }
+    })
+    sourceDirectories.from(sourceSets.main.allSource.srcDirs)
+    additionalSourceDirs.from(sourceSets.main.allSource.srcDirs)
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+    onlyIf {
+        clientCoverageExecFile.exists()
+    }
 }
 
 mixin {
@@ -32,6 +81,7 @@ group = mod_group_id
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 dependencies {
+    jacocoAgent "org.jacoco:org.jacoco.agent:${jacoco.toolVersion}:runtime"
     //原版
     minecraft "net.minecraftforge:forge:1.20.1-47.4.10"
     //changed类
@@ -44,30 +94,81 @@ dependencies {
     runtimeOnly  fg.deobf("curse.maven:embeddium-908741:5681725")
     //runtimeOnly  fg.deobf("curse.maven:ruok-910904:7637298")
     runtimeOnly  fg.deobf("curse.maven:cloth-config-348521:5729105")
-    runtimeOnly  fg.deobf("curse.maven:rubidium-extra-654373:6101745")
-    runtimeOnly  fg.deobf("curse.maven:chloride-931925:7378010")
+    //runtimeOnly  fg.deobf("curse.maven:rubidium-extra-654373:6101745")
+    //runtimeOnly  fg.deobf("curse.maven:chloride-931925:7378010")
     runtimeOnly  fg.deobf("curse.maven:ferritecore-429235:4810975")
     //等价交换
-    implementation fg.deobf("curse.maven:projecte-226410:4901949")
+    compileOnly fg.deobf("curse.maven:projecte-226410:4901949")
     compileOnly fg.deobf("curse.maven:projectextended-353775:4860891")
     //其他模组
     //runtimeOnly  fg.deobf("curse.maven:inventory-sort-1317144:7724308")
     compileOnly fg.deobf("curse.maven:jei-238222:7391695")
     //implementation fg.deobf("curse.maven:bakeries-1191781:7657697")
+    //正版
     implementation fg.deobf("curse.maven:oauth-513857:4575495")
     //compileOnly()
 }
 minecraft {
     mappings channel: mapping_channel, version: mapping_version
     runs {
+        //开发环境
         client {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'info'
+            jvmArgs(
+                    "-Xms4G",
+                    "-Xmx6G",
+                    "-XX:+UseG1GC",
+                    "-XX:+ParallelRefProcEnabled",
+                    "-XX:MaxGCPauseMillis=100",
+                    "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+DisableExplicitGC",
+                    "-XX:G1NewSizePercent=20",
+                    "-XX:G1MaxNewSizePercent=40",
+                    "-XX:G1HeapRegionSize=8M",
+                    "-XX:G1ReservePercent=20",
+                    "-XX:InitiatingHeapOccupancyPercent=15"
+            )
             mods {
                 changede {
                     source sourceSets.main
                 }
             }
+        }
+        //正式环境
+        create("clientCoverage") {
+            parent null, "client"
+            taskName "runClientCoverage"
+            workingDirectory project.file('run-coverage')
+            property 'forge.logging.console.level', 'info'
+        }
+        create("clientJfr") {
+            parent null, "client"
+            taskName "runClientJfr"
+            workingDirectory project.file('run-jfr')
+            property 'forge.logging.console.level', 'info'
+        }
+        create("clientProd") {
+            parent null, "client"
+            taskName "runClientProd"
+            workingDirectory project.file('run-prod')
+            property 'forge.logging.console.level', 'info'
+            environment 'MOD_CLASSES', project.file('run-prod/empty').absolutePath
+            // 注意：这里不写 mods { sourceSets.main }
+            // 让它从 run-prod/mods 读取打包后的 jar
+        }
+        create("clientProdFast") {
+            parent null, "clientProd"
+            taskName "runClientProdFast"
+            workingDirectory project.file('run-prod-fast')
+            property 'forge.logging.console.level', 'info'
+            environment 'MOD_CLASSES', project.file('run-prod-fast/empty').absolutePath
+        }
+        create("clientFast") {
+            parent null, "client"
+            taskName "runClientFast"
+            workingDirectory project.file('run-fast')
+            property 'forge.logging.console.level', 'info'
         }
         server {
             workingDirectory project.file('run')
@@ -80,7 +181,9 @@ minecraft {
         }
     }
 }
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+tasks.named('test') {
+    enabled = false
+}
 repositories {
     mavenCentral()
     flatDir {
@@ -111,6 +214,7 @@ repositories {
     maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
 }
 tasks.named('processResources', ProcessResources).configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     var replaceProperties = [
             minecraft_version: minecraft_version,
             minecraft_version_range: minecraft_version_range,
@@ -123,6 +227,7 @@ tasks.named('processResources', ProcessResources).configure {
             mod_version: mod_version,
             mod_authors: mod_authors,
             mod_description: mod_description,
+            displayURL: displayURL,
     ]
     inputs.properties replaceProperties
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
@@ -183,4 +288,75 @@ publishing {
 }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+tasks.register('devJar', Jar) {
+    archiveBaseName.set("changed-extra")
+    archiveVersion.set(mod_version)
+    archiveClassifier.set("dev")
+    from(sourceSets.main.output)
+    from("${buildDir}/classes/java/main") {
+        include '**/*.refmap.json'
+        into 'META-INF'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('prepareProdRun', Copy) {
+    dependsOn tasks.named('devJar')
+    from(tasks.named('devJar').flatMap { it.archiveFile })
+    into("$projectDir/run-prod/mods")
+    doFirst {
+        mkdir("$projectDir/run-prod/empty")
+        delete fileTree("$projectDir/run-prod/mods") {
+            include "changed-extra-*.jar"
+        }
+    }
+}
+
+tasks.register('prepareProdFastRun', Copy) {
+    dependsOn tasks.named('devJar')
+    from(tasks.named('devJar').flatMap { it.archiveFile })
+    into("$projectDir/run-prod-fast/mods")
+    doFirst {
+        mkdir("$projectDir/run-prod-fast/empty")
+        delete fileTree("$projectDir/run-prod-fast/mods") {
+            include "changed-extra-*.jar"
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name.toLowerCase() == 'runclientprod') {
+        dependsOn 'prepareProdRun'
+    }
+    if (name.toLowerCase() == 'runclientprodfast') {
+        dependsOn 'prepareProdFastRun'
+        doFirst {
+            // Prod-jar startup benchmark profile.
+            jvmArgs "-Dmixin.env.disableRefMap=true"
+            jvmArgs "-Dchangede.mixin.addonLight=true"
+        }
+    }
+    if (name.toLowerCase() == 'runclientcoverage') {
+        finalizedBy 'jacocoRunClientReport'
+        doFirst {
+            mkdir(clientCoverageExecFile.parentFile)
+            delete clientCoverageExecFile
+            jvmArgs "-javaagent:${configurations.jacocoAgent.singleFile}=destfile=${clientCoverageExecFile.absolutePath},append=false,includes=github.com.gengyoubo.*:net.ltxprogrammer.changed.*:net.foxyas.changedaddon.*"
+        }
+    }
+    if (name.toLowerCase() == 'runclientjfr') {
+        doFirst {
+            mkdir(startupJfrFile.parentFile)
+            delete startupJfrFile
+            jvmArgs "-XX:StartFlightRecording=filename=${startupJfrFile.absolutePath},dumponexit=true,settings=profile"
+        }
+    }
+    if (name.toLowerCase() == 'runclientfast') {
+        doFirst {
+            // Fast-start profile for local startup benchmarking only.
+            jvmArgs "-Dmixin.env.disableRefMap=true"
+            jvmArgs "-Dchangede.mixin.addonLight=true"
+        }
+    }
 }

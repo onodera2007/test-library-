@@ -1,6 +1,6 @@
 package github.com.gengyoubo.enchantment;
 
-import github.com.gengyoubo.CERegister;
+import github.com.gengyoubo.init.CEEnchantment;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.enchantment.Enchantment;
 
@@ -9,7 +9,7 @@ public class XPBoostEnchantment extends Enchantment {
     public XPBoostEnchantment() {
         super(
             Rarity.UNCOMMON,
-            CERegister.MELEE,
+            CEEnchantment.MELEE,
             new EquipmentSlot[]{EquipmentSlot.MAINHAND}
         );
     }

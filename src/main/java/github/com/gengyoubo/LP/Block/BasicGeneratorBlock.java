@@ -1,35 +1,35 @@
 package github.com.gengyoubo.LP.Block;
 
-import github.com.gengyoubo.LP.CELPRegister;
 import github.com.gengyoubo.LP.BlockEntity.GeneratorBlockEntity.BasicGeneratorBlockEntity;
 import github.com.gengyoubo.LP.BlockEntity.GeneratorBlockEntity.GeneratorBlockEntity;
+import github.com.gengyoubo.LP.init.CELPBlockEntity;
 import github.com.gengyoubo.LP.world.Menu.BasicGeneratorBlockEntityMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class BasicGeneratorBlock extends BaseEntityBlock implements EntityBlock {
     private static final Component TITLE = Component.literal("Basic Generator");
+    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    public BasicGeneratorBlock() {
-        super(BlockBehaviour.Properties.of().sound(SoundType.GRAVEL).strength(1f, 10f));
+    public BasicGeneratorBlock(Properties properties) {
+        super(BlockBehaviour.Properties.of().sound(SoundType.STONE).strength(1f, 10f));
     }
 
     @Override
@@ -41,7 +41,27 @@ public class BasicGeneratorBlock extends BaseEntityBlock implements EntityBlock 
     public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new BasicGeneratorBlockEntity(pos, state);
     }
+    @Override
+    public @NotNull BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
 
+    @Override
+    @SuppressWarnings("deprecation")
+    public @NotNull BlockState rotate(@NotNull BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public @NotNull BlockState mirror(@NotNull BlockState state, Mirror mirror) {
+        return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+        builder.add(FACING);
+    }
     @SuppressWarnings("deprecation")
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
@@ -65,7 +85,7 @@ public class BasicGeneratorBlock extends BaseEntityBlock implements EntityBlock 
 
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
-        if (type != CELPRegister.BASIC_GENERATOR_BLOCK_ENTITY.get()) {
+        if (type != CELPBlockEntity.BASIC_GENERATOR_BLOCK_ENTITY.get()) {
             return null;
         }
 

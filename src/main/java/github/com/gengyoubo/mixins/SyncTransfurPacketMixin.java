@@ -1,7 +1,7 @@
 package github.com.gengyoubo.mixins;
 
-import github.com.gengyoubo.fix.PatreonBenefitsFix;
-import github.com.gengyoubo.fix.SpecialLatex;
+import github.com.gengyoubo.fix.SpecialLatex.PatreonBenefitsFix;
+import github.com.gengyoubo.fix.SpecialLatex.SpecialLatex;
 import net.ltxprogrammer.changed.Changed;
 import net.ltxprogrammer.changed.entity.TransfurContext;
 import net.ltxprogrammer.changed.entity.variant.TransfurVariant;
@@ -10,10 +10,8 @@ import net.ltxprogrammer.changed.init.ChangedTransfurVariants;
 import net.ltxprogrammer.changed.network.packet.SyncTransfurPacket;
 import net.ltxprogrammer.changed.process.ProcessTransfur;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -34,10 +32,11 @@ public abstract class SyncTransfurPacketMixin {
      * @reason Support dynamic special/form_uuid variants that are not in TRANSFUR_VARIANT registry IDs.
      */
     @Inject(method = "handle", at = @At("HEAD"), cancellable = true)
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void changede$handle(
             NetworkEvent.Context context,
             CompletableFuture<net.minecraft.world.level.Level> levelFuture,
-            Executor executor,
+            Executor sidedExecutor,
             CallbackInfoReturnable<CompletableFuture<Void>> cir
     ) {
         if (context.getDirection().getReceptionSide().isClient()) {
@@ -53,9 +52,16 @@ public abstract class SyncTransfurPacketMixin {
                 int formId = listing.changede$getForm();
                 TransfurVariant<?> variant = ChangedRegistry.TRANSFUR_VARIANT.getValue(formId);
                 boolean usedSpecialFallback = false;
+                var data = listing.changede$getData();
+                boolean hasData = data != null && !data.isEmpty();
+                boolean looksLikeActiveTransfur =
+                        listing.changede$getProgress() > 0.0001f ||
+                        listing.changede$isTemporaryFromSuit() ||
+                        hasData;
 
-                // Dynamic special variants may be synced as NO_FORM (-1), so always try UUID fallback.
-                if (variant == null) {
+                // Dynamic special variants may be synced as NO_FORM (-1), but NO_FORM is also used by untf.
+                // Only use special fallback when packet clearly represents an active transfur state.
+                if (variant == null && looksLikeActiveTransfur) {
                     variant = PatreonBenefitsFix.getPlayerSpecialVariant(player.getUUID());
                     usedSpecialFallback = variant != null;
                 }
@@ -66,10 +72,13 @@ public abstract class SyncTransfurPacketMixin {
                     variant = ChangedTransfurVariants.FALLBACK_VARIANT.get();
                 }
                 Changed.LOGGER.debug(
-                        "SyncTransfurPacket client entityId={} player={} formId={} variant={} fallback={}",
+                        "SyncTransfurPacket client entityId={} player={} formId={} progress={} hasData={} temp={} variant={} fallback={}",
                         entityId,
                         player.getScoreboardName(),
                         formId,
+                        listing.changede$getProgress(),
+                        hasData,
+                        listing.changede$isTemporaryFromSuit(),
                         variant == null ? "null" : variant.getFormId(),
                         usedSpecialFallback
                 );
@@ -93,17 +102,7 @@ public abstract class SyncTransfurPacketMixin {
             return;
         }
 
-        ServerPlayer sender = context.getSender();
-        if (sender != null) {
-            Object senderListing = this.changedForms.get(sender.getId());
-            if (senderListing != null) {
-                Changed.PACKET_HANDLER.send(
-                        PacketDistributor.ALL.noArg(),
-                        new SyncTransfurPacket((Map) Map.of(sender.getId(), senderListing))
-                );
-            }
-        }
-        context.setPacketHandled(true);
-        cir.setReturnValue(CompletableFuture.completedFuture(null));
+        // Server side: let original SyncTransfurPacket#handle run.
+        // We only override client resolution to support dynamic special/form_uuid variants.
     }
 }
