@@ -10,6 +10,8 @@ import net.ltxprogrammer.changed.init.ChangedLatexTypes;
 import net.ltxprogrammer.changed.process.ProcessTransfur;
 import net.ltxprogrammer.changed.util.Color3;
 import net.ltxprogrammer.changed.util.PatreonBenefits;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Pose;
@@ -145,6 +147,56 @@ public class SpecialLatex extends ChangedEntity {
             if (event.phase != TickEvent.Phase.END) return;
 
             Player player = event.player;
+            if (player.level().isClientSide) return;
+
+            CompoundTag persistentData = player.getPersistentData();
+            if (persistentData.contains(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG)) {
+                ResourceLocation specialFormId = ResourceLocation.tryParse(
+                        persistentData.getString(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG)
+                );
+                TransfurVariant<?> specialVariant = PatreonBenefitsFix.resolveVariant(specialFormId);
+                if (specialVariant != null) {
+                    int confirmTicks = persistentData.getInt(PatreonBenefitsFix.PENDING_SPECIAL_FORM_CONFIRM_TICKS_TAG);
+                    if (confirmTicks <= 0) confirmTicks = 40;
+
+                    var currentVariant = ProcessTransfur.getPlayerTransfurVariantSafe(player)
+                            .map(instance -> instance.getParent())
+                            .orElse(null);
+                    boolean restoredThisTick = currentVariant != specialVariant;
+                    var instance = !restoredThisTick
+                            ? ProcessTransfur.getPlayerTransfurVariantSafe(player).orElse(null)
+                            : ProcessTransfur.setPlayerTransfurVariant(player, specialVariant, null, 1.0f, false, entity -> {});
+                    if (instance != null) {
+                        if (restoredThisTick && persistentData.contains(PatreonBenefitsFix.PENDING_SPECIAL_FORM_DATA_TAG)) {
+                            instance.load(persistentData.getCompound(PatreonBenefitsFix.PENDING_SPECIAL_FORM_DATA_TAG));
+                        }
+
+                        if (instance.getChangedEntity() instanceof SpecialLatex specialLatex
+                                && (restoredThisTick || specialLatex.specialLatexForm == null)) {
+                            UUID specialFormUuid = PatreonBenefitsFix.getSpecialFormUuid(specialFormId);
+                            if (specialFormUuid != null) {
+                                specialLatex.setSpecialForm(specialFormUuid);
+                            }
+                        }
+
+                        if (!restoredThisTick) {
+                            confirmTicks--;
+                        } else {
+                            confirmTicks = 40;
+                            Changed.LOGGER.debug("Restored pending special form {} for player {}", specialFormId, player.getScoreboardName());
+                        }
+
+                        if (confirmTicks <= 0) {
+                            persistentData.remove(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG);
+                            persistentData.remove(PatreonBenefitsFix.PENDING_SPECIAL_FORM_DATA_TAG);
+                            persistentData.remove(PatreonBenefitsFix.PENDING_SPECIAL_FORM_CONFIRM_TICKS_TAG);
+                        } else {
+                            persistentData.putInt(PatreonBenefitsFix.PENDING_SPECIAL_FORM_CONFIRM_TICKS_TAG, confirmTicks);
+                        }
+                    }
+                }
+            }
+
             ProcessTransfur.getPlayerTransfurVariantSafe(player).ifPresent(instance -> {
                 if (instance.getChangedEntity() instanceof SpecialLatex specialLatex && specialLatex.specialLatexForm == null) {
                     specialLatex.setSpecialForm(player.getUUID());

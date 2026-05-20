@@ -1,9 +1,7 @@
 package github.com.gengyoubo.mixins;
 
 import github.com.gengyoubo.fix.PatreonBenefitsFix;
-import github.com.gengyoubo.fix.SpecialLatex;
-import net.ltxprogrammer.changed.entity.variant.TransfurVariant;
-import net.ltxprogrammer.changed.process.ProcessTransfur;
+import net.ltxprogrammer.changed.init.ChangedTransfurVariants;
 import net.ltxprogrammer.changed.util.TagUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -13,14 +11,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.UUID;
-
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerSpecialVariantMixin {
-    private static final String SPECIAL_FORM_PREFIX = "special/form_";
-
-    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
-    private void changede$restoreSpecialVariant(CompoundTag tag, CallbackInfo ci) {
+    @Inject(method = "readAdditionalSaveData", at = @At("HEAD"))
+    private void changede$normalizeSpecialVariantBeforeRead(CompoundTag tag, CallbackInfo ci) {
         if (!tag.contains("TransfurVariant")) {
             return;
         }
@@ -30,32 +24,32 @@ public abstract class ServerPlayerSpecialVariantMixin {
             return;
         }
 
-        TransfurVariant<?> variant = PatreonBenefitsFix.resolveVariant(variantId);
-        if (variant == null) {
+        tag.putString(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG, variantId.toString());
+        ResourceLocation safeVariantId = ChangedTransfurVariants.FALLBACK_VARIANT.get().getFormId();
+        if (safeVariantId != null) {
+            tag.putString("TransfurVariant", safeVariantId.toString());
+        }
+    }
+
+    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
+    private void changede$queueSpecialVariantRestore(CompoundTag tag, CallbackInfo ci) {
+        if (!tag.contains("TransfurVariant") && !tag.contains(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG)) {
+            return;
+        }
+
+        ResourceLocation variantId = tag.contains(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG)
+                ? ResourceLocation.tryParse(tag.getString(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG))
+                : TagUtil.getResourceLocation(tag, "TransfurVariant");
+        if (!PatreonBenefitsFix.isSpecialFormId(variantId)) {
             return;
         }
 
         ServerPlayer self = (ServerPlayer) (Object) this;
-        ProcessTransfur.setPlayerTransfurVariant(self, variant, null, 1.0f, false, entity -> {
-            if (tag.contains("Leash", 10)) {
-                entity.getChangedEntity().setLeashInfoTag(tag.getCompound("Leash"));
-            }
-        });
-
-        ProcessTransfur.getPlayerTransfurVariantSafe(self).ifPresent(instance -> {
-            if (tag.contains("TransfurVariantData")) {
-                instance.load(tag.getCompound("TransfurVariantData"));
-            }
-
-            if (instance.getChangedEntity() instanceof SpecialLatex specialLatex) {
-                String path = variantId.getPath();
-                if (path.startsWith(SPECIAL_FORM_PREFIX)) {
-                    try {
-                        specialLatex.setSpecialForm(UUID.fromString(path.substring(SPECIAL_FORM_PREFIX.length())));
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-            }
-        });
+        CompoundTag persistentData = self.getPersistentData();
+        persistentData.putString(PatreonBenefitsFix.PENDING_SPECIAL_FORM_ID_TAG, variantId.toString());
+        persistentData.putInt(PatreonBenefitsFix.PENDING_SPECIAL_FORM_CONFIRM_TICKS_TAG, 40);
+        if (tag.contains("TransfurVariantData")) {
+            persistentData.put(PatreonBenefitsFix.PENDING_SPECIAL_FORM_DATA_TAG, tag.getCompound("TransfurVariantData").copy());
+        }
     }
 }
